@@ -21,6 +21,6 @@ def insert_records(query, records, entity_name):
             for record in records:
                 cursor.execute(query, record)
             conn.commit()
-        logging.info(f"{len(records)} {entity_name} records inserted successfully.")
+        logging.info(f"{len(records)} {entity_name} records insertion ended.")
     except Exception as e:
         logging.error(f"Failed to insert {entity_name} records: {e}")

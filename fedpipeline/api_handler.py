@@ -4,8 +4,10 @@ from fedpipeline.config import API_CONFIG, CREDENTIALS
 
 def get_token():
     payload = {
-        "email": CREDENTIALS["email"],
-        "password": CREDENTIALS["password"]
+        "public_v1_user": {
+            "email": CREDENTIALS["email"],
+            "password": CREDENTIALS["password"]
+        }
     }
     try:
         response = requests.post(API_CONFIG["LOGIN_URL"], json=payload)
@@ -23,7 +25,8 @@ def fetch_data_from_api(url, token):
         headers = {"Authorization": token}
         response = requests.get(url, headers=headers)
         response.raise_for_status()
-        return response.json().get("items", [])
+        logging.info(response.json().get("data"))
+        return response.json().get("data", [])
     except Exception as e:
         logging.error(f"Failed to fetch data from {url}: {e}")
         return []

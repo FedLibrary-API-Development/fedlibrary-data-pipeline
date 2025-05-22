@@ -72,7 +72,7 @@ GO
 
 CREATE TABLE Reading (
     ereserve_id INT PRIMARY KEY NOT NULL,
-    reading_title NVARCHAR(100),
+    reading_title NVARCHAR(200),
     genre NVARCHAR(100),
     source_document_title NVARCHAR(100),
     article_number NVARCHAR(100),
@@ -114,7 +114,6 @@ CREATE TABLE ReadingListUsage (
     list_id INT NOT NULL,
     integration_user_id INT NOT NULL,
     item_usage_count BIGINT DEFAULT 0,
-    list_publication_method NVARCHAR(100),
     created_at DATETIME,
     updated_at DATETIME,
     CONSTRAINT FK_ReadingListusage_List FOREIGN KEY (list_id) REFERENCES ReadingList (ereserve_id),
@@ -154,7 +153,6 @@ CREATE TABLE UnitOffering (
     source_unit_name NVARCHAR(255),
     source_unit_offering NVARCHAR(100),
     result NVARCHAR(255),
-    list_publication_method NVARCHAR(100),
     created_at DATETIME,
     updated_at DATETIME,
     CONSTRAINT FK_UnitOffering_Unit FOREIGN KEY (unit_id) REFERENCES Unit (ereserve_id),
