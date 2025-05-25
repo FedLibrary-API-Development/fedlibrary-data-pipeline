@@ -34,12 +34,15 @@ def job():
     process_readings(token)
     process_units(token)
     process_teaching_sessions(token)
+    """
+    # commented until foreignkey issue is fixed by eReserve vendor.
     process_reading_lists(token)
     process_reading_list_items(token)
     process_reading_list_usage(token)
     process_reading_list_item_usage(token)
     process_reading_utilisation(token)
     process_unit_offerings(token)
+    """
 
 def start_scheduler():
     schedule.every(1).minutes.do(job)
