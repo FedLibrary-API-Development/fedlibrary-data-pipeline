@@ -34,18 +34,17 @@ def job():
     process_readings(token)
     process_units(token)
     process_teaching_sessions(token)
-    """
-    # commented until foreignkey issue is fixed by eReserve vendor.
     process_reading_lists(token)
     process_reading_list_items(token)
     process_reading_list_usage(token)
     process_reading_list_item_usage(token)
     process_reading_utilisation(token)
     process_unit_offerings(token)
-    """
 
 def start_scheduler():
-    schedule.every(1).minutes.do(job)
+    job()  # Run immediately at startup
+    # Monthly run. Need to change this to use APScheduler
+    schedule.every(1296000).minutes.do(job)
     logging.info("Scheduler started. Waiting for job trigger...")
     while True:
         schedule.run_pending()
