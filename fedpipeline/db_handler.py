@@ -19,8 +19,12 @@ def insert_records(query, records, entity_name):
         with pyodbc.connect(conn_str) as conn:
             cursor = conn.cursor()
             for record in records:
-                cursor.execute(query, record)
-            conn.commit()
+                try:
+                    logging.info(record)
+                    cursor.execute(query, record)
+                except Exception as rec_err:
+                    logging.error(f"Failed to insert record into {entity_name}: {record} | Error: {rec_err}")
+            conn.commit()                
         logging.info(f"{len(records)} {entity_name} records insertion ended.")
     except Exception as e:
         logging.error(f"Failed to insert {entity_name} records: {e}")

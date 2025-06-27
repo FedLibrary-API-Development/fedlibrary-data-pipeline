@@ -18,13 +18,13 @@ GO
 
 CREATE TABLE IntegrationUser (
     ereserve_id INT PRIMARY KEY NOT NULL,
-    identifier NVARCHAR(255) NOT NULL,
+    identifier NVARCHAR(255),
     roles NVARCHAR(255) NOT NULL,
-    first_name NVARCHAR(255) NOT NULL,
-    last_name NVARCHAR(255) NOT NULL,
-    email NVARCHAR(100) NOT NULL,
+    first_name NVARCHAR(255),
+    last_name NVARCHAR(255),
+    email NVARCHAR(100),
     lti_consumer_user_id NVARCHAR(255) NOT NULL,
-    lti_lis_person_sourcedid NVARCHAR(255) NOT NULL,
+    lti_lis_person_sourcedid NVARCHAR(255),
     created_at DATETIME,
     updated_at DATETIME
 );
@@ -46,7 +46,7 @@ GO
 
 CREATE TABLE Unit (
     ereserve_id INT PRIMARY KEY NOT NULL,
-    code NVARCHAR(50) NOT NULL,
+    code NVARCHAR(100) NOT NULL,
     name NVARCHAR(255) NOT NULL
 );
 GO
@@ -72,9 +72,9 @@ GO
 
 CREATE TABLE Reading (
     ereserve_id INT PRIMARY KEY NOT NULL,
-    reading_title NVARCHAR(200),
+    reading_title NVARCHAR(1000),
     genre NVARCHAR(100),
-    source_document_title NVARCHAR(100),
+    source_document_title NVARCHAR(500),
     article_number NVARCHAR(100),
     created_at DATETIME,
     updated_at DATETIME
@@ -128,7 +128,7 @@ GO
 CREATE TABLE ReadingListItem (
     ereserve_id INT PRIMARY KEY NOT NULL,
     list_id INT NOT NULL,
-    reading_id INT NOT NULL,
+    reading_id INT,
     status NVARCHAR(50),
     hidden BIT DEFAULT 0,
     reading_utilisations_count BIGINT DEFAULT 0,
