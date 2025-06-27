@@ -28,3 +28,6 @@ DB_CONFIG = {
     "UID": "sa",
     "PWD": "tharu"
 }
+
+# Page size to fetch data in batches
+PAGE_SIZE = 1000

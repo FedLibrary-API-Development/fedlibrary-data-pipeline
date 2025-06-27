@@ -2,23 +2,39 @@ import logging
 from fedpipeline.api_handler import fetch_data_from_api
 from fedpipeline.db_handler import insert_records
 from fedpipeline.config import API_CONFIG
+from fedpipeline.config import PAGE_SIZE
+
+def fetch_all_pages(url, token):
+    all_items = []
+    while url:
+        response = fetch_data_from_api(url, token)
+        data = response.json().get("data", [])
+        links = response.json().get("links", {})
+        logging.info(f"Fetched {len(data)} items from {url}")
+        if not data:
+            break
+        all_items.extend(data)
+        url = links.get("next")
+    return all_items
 
 def process_integration_users(token):
-    users = fetch_data_from_api(API_CONFIG["INTEGRATION_USERS_URL"], token)
+    url = f"{API_CONFIG['INTEGRATION_USERS_URL']}?page[size]={PAGE_SIZE}"
+    all_users = fetch_all_pages(url, token)
+
     formatted = [
         (
             item.get("id"),
-            item["attributes"]["identifier"],
-            item["attributes"]["roles"],
-            item["attributes"]["first-name"],
-            item["attributes"]["last-name"],
-            item["attributes"]["email"],
-            item["attributes"]["lti-consumer-user-id"],
-            item["attributes"]["lti-lis-person-sourcedid"],
-            item["attributes"]["created-at"],
-            item["attributes"]["updated-at"]
+            item["attributes"].get("identifier"),
+            item["attributes"].get("roles"),
+            item["attributes"].get("first-name"),
+            item["attributes"].get("last-name"),
+            item["attributes"].get("email"),
+            item["attributes"].get("lti-consumer-user-id"),
+            item["attributes"].get("lti-lis-person-sourcedid"),
+            item["attributes"].get("created-at"),
+            item["attributes"].get("updated-at"),
         )
-        for item in users
+        for item in all_users
     ]
     query = """
         INSERT INTO IntegrationUser (
@@ -29,22 +45,24 @@ def process_integration_users(token):
     insert_records(query, formatted, "IntegrationUser")
 
 def process_schools(token):
-    schools = fetch_data_from_api(API_CONFIG["SCHOOLS_URL"], token)
-    formatted = [(item.get("id"), item["attributes"]["name"]) for item in schools]
+    url = f"{API_CONFIG['SCHOOLS_URL']}?page[size]={PAGE_SIZE}"
+    schools = fetch_all_pages(url, token)
+    formatted = [(item.get("id"), item["attributes"].get("name")) for item in schools]
     query = "INSERT INTO School (ereserve_id, name) VALUES (?, ?)"
     insert_records(query, formatted, "School")
 
 def process_readings(token):
-    readings = fetch_data_from_api(API_CONFIG["READINGS_URL"], token)
+    url = f"{API_CONFIG['READINGS_URL']}?page[size]={PAGE_SIZE}"
+    readings = fetch_all_pages(url, token)
     formatted = [
         (
             item.get("id"),
-            item["attributes"]["reading-title"],
-            item["attributes"]["genre"],
-            item["attributes"]["source-document-title"],
-            item["attributes"]["article-number"],
-            item["attributes"]["created-at"],
-            item["attributes"]["updated-at"]
+            item["attributes"].get("reading-title"),
+            item["attributes"].get("genre"),
+            item["attributes"].get("source-document-title"),
+            item["attributes"].get("article-number"),
+            item["attributes"].get("created-at"),
+            item["attributes"].get("updated-at")
         )
         for item in readings
     ]
@@ -57,27 +75,29 @@ def process_readings(token):
     insert_records(query, formatted, "Reading")
 
 def process_units(token):
-    units = fetch_data_from_api(API_CONFIG["UNITS_URL"], token)
+    url = f"{API_CONFIG['UNITS_URL']}?page[size]={PAGE_SIZE}"
+    units = fetch_all_pages(url, token)
     formatted = [
-        (item.get("id"), item["attributes"]["code"], item["attributes"]["name"])
+        (item.get("id"), item["attributes"].get("code"), item["attributes"].get("name"))
         for item in units
     ]
     query = "INSERT INTO Unit (ereserve_id, code, name) VALUES (?, ?, ?)"
     insert_records(query, formatted, "Unit")
 
 def process_unit_offerings(token):
-    offerings = fetch_data_from_api(API_CONFIG["UNIT_OFFERINGS_URL"], token)
+    url = f"{API_CONFIG['UNIT_OFFERINGS_URL']}?page[size]={PAGE_SIZE}"
+    offerings = fetch_all_pages(url, token)
     formatted = [
         (
             item.get("id"),
-            item["attributes"]["unit-id"],
-            item["attributes"]["reading-list-id"],
-            item["attributes"]["source-unit-code"],
-            item["attributes"]["source-unit-name"],
-            item["attributes"]["source-unit-offering"],
-            item["attributes"]["result"],
-            item["attributes"]["created-at"],
-            item["attributes"]["updated-at"]
+            item["attributes"].get("unit-id"),
+            item["attributes"].get("reading-list-id"),
+            item["attributes"].get("source-unit-code"),
+            item["attributes"].get("source-unit-name"),
+            item["attributes"].get("source-unit-offering"),
+            item["attributes"].get("result"),
+            item["attributes"].get("created-at"),
+            item["attributes"].get("updated-at")
         )
         for item in offerings
     ]
@@ -90,16 +110,17 @@ def process_unit_offerings(token):
     insert_records(query, formatted, "UnitOffering")
 
 def process_teaching_sessions(token):
-    sessions = fetch_data_from_api(API_CONFIG["TEACHING_SESSIONS_URL"], token)
+    url = f"{API_CONFIG['TEACHING_SESSIONS_URL']}?page[size]={PAGE_SIZE}"
+    sessions = fetch_all_pages(url, token)
     formatted = [
         (
             item.get("id"),
-            item["attributes"]["name"],
-            item["attributes"]["start-date"],
-            item["attributes"]["end-date"],
-            item["attributes"]["archived"],
-            item["attributes"]["created-at"],
-            item["attributes"]["updated-at"]
+            item["attributes"].get("name"),
+            item["attributes"].get("start-date"),
+            item["attributes"].get("end-date"),
+            item["attributes"].get("archived"),
+            item["attributes"].get("created-at"),
+            item["attributes"].get("updated-at")
         )
         for item in sessions
     ]
@@ -112,23 +133,24 @@ def process_teaching_sessions(token):
     insert_records(query, formatted, "TeachingSession")
 
 def process_reading_lists(token):
-    lists = fetch_data_from_api(API_CONFIG["READING_LISTS_URL"], token)
+    url = f"{API_CONFIG['READING_LISTS_URL']}?page[size]={PAGE_SIZE}"
+    lists = fetch_all_pages(url, token)
     formatted = [
         (
             item.get("id"),
-            item["attributes"]["unit-id"],
-            item["attributes"]["teaching-session-id"],
-            item["attributes"]["name"],
-            item["attributes"]["duration"],
-            item["attributes"]["start-date"],
-            item["attributes"]["end-date"],
-            item["attributes"]["hidden"],
-            item["attributes"]["usage-count"],
-            item["attributes"]["item-count"],
-            item["attributes"]["approved-item-count"],
-            item["attributes"]["deleted"],
-            item["attributes"]["created-at"],
-            item["attributes"]["updated-at"]
+            item["attributes"].get("unit-id"),
+            item["attributes"].get("teaching-session-id"),
+            item["attributes"].get("name"),
+            item["attributes"].get("duration"),
+            item["attributes"].get("start-date"),
+            item["attributes"].get("end-date"),
+            item["attributes"].get("hidden"),
+            item["attributes"].get("usage-count"),
+            item["attributes"].get("item-count"),
+            item["attributes"].get("approved-item-count"),
+            item["attributes"].get("deleted"),
+            item["attributes"].get("created-at"),
+            item["attributes"].get("updated-at")
         )
         for item in lists
     ]
@@ -142,19 +164,20 @@ def process_reading_lists(token):
     insert_records(query, formatted, "ReadingList")
 
 def process_reading_list_items(token):
-    items = fetch_data_from_api(API_CONFIG["READING_LIST_ITEMS_URL"], token)
+    url = f"{API_CONFIG['READING_LIST_ITEMS_URL']}?page[size]={PAGE_SIZE}"
+    items = fetch_all_pages(url, token)
     formatted = [
         (
             item.get("id"),
-            item["attributes"]["list-id"],
-            item["attributes"]["reading-id"],
-            item["attributes"]["status"],
-            item["attributes"]["hidden"],
-            item["attributes"]["reading-utilisations-count"],
-            item["attributes"]["reading-importance"],
-            item["attributes"]["usage-count"],
-            item["attributes"]["created-at"],
-            item["attributes"]["updated-at"]
+            item["attributes"].get("list-id"),
+            item["attributes"].get("reading-id"),
+            item["attributes"].get("status"),
+            item["attributes"].get("hidden"),
+            item["attributes"].get("reading-utilisations-count"),
+            item["attributes"].get("reading-importance"),
+            item["attributes"].get("usage-count"),
+            item["attributes"].get("created-at"),
+            item["attributes"].get("updated-at")
         )
         for item in items
     ]
@@ -168,15 +191,16 @@ def process_reading_list_items(token):
     insert_records(query, formatted, "ReadingListItem")
 
 def process_reading_list_usage(token):
-    usages = fetch_data_from_api(API_CONFIG["READING_LIST_USAGE_URL"], token)
+    url = f"{API_CONFIG['READING_LIST_USAGE_URL']}?page[size]={PAGE_SIZE}"
+    usages = fetch_all_pages(url, token)
     formatted = [
         (
             item.get("id"),
-            item["attributes"]["list-id"],
-            item["attributes"]["integration-user-id"],
-            item["attributes"]["item-usage-count"],
-            item["attributes"]["created-at"],
-            item["attributes"]["updated-at"]
+            item["attributes"].get("list-id"),
+            item["attributes"].get("integration-user-id"),
+            item["attributes"].get("item-usage-count"),
+            item["attributes"].get("created-at"),
+            item["attributes"].get("updated-at")
         )
         for item in usages
     ]
@@ -189,16 +213,17 @@ def process_reading_list_usage(token):
     insert_records(query, formatted, "ReadingListUsage")
 
 def process_reading_list_item_usage(token):
-    usages = fetch_data_from_api(API_CONFIG["READING_LIST_ITEM_USAGE_URL"], token)
+    url = f"{API_CONFIG['READING_LIST_ITEM_USAGE_URL']}?page[size]={PAGE_SIZE}"
+    usages = fetch_all_pages(url, token)
     formatted = [
         (
             item.get("id"),
-            item["attributes"]["item-id"],
-            item["attributes"]["list-usage-id"],
-            item["attributes"]["integration-user-id"],
-            item["attributes"]["utilisation-count"],
-            item["attributes"]["created-at"],
-            item["attributes"]["updated-at"]
+            item["attributes"].get("item-id"),
+            item["attributes"].get("list-usage-id"),
+            item["attributes"].get("integration-user-id"),
+            item["attributes"].get("utilisation-count"),
+            item["attributes"].get("created-at"),
+            item["attributes"].get("updated-at")
         )
         for item in usages
     ]
@@ -212,15 +237,16 @@ def process_reading_list_item_usage(token):
     insert_records(query, formatted, "ReadingListItemUsage")
 
 def process_reading_utilisation(token):
-    utilisations = fetch_data_from_api(API_CONFIG["READING_UTILISATION_URL"], token)
+    url = f"{API_CONFIG['READING_UTILISATION_URL']}?page[size]={PAGE_SIZE}"
+    utilisations = fetch_all_pages(url, token)
     formatted = [
         (
             item.get("id"),
-            item["attributes"]["integration-user-id"],
-            item["attributes"]["item-id"],
-            item["attributes"]["item-usage-id"],
-            item["attributes"]["created-at"],
-            item["attributes"]["updated-at"]
+            item["attributes"].get("integration-user-id"),
+            item["attributes"].get("item-id"),
+            item["attributes"].get("item-usage-id"),
+            item["attributes"].get("created-at"),
+            item["attributes"].get("updated-at")
         )
         for item in utilisations
     ]

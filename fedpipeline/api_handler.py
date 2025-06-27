@@ -69,8 +69,7 @@ def fetch_data_from_api(url, token):
         headers = {"Authorization": token}
         response = requests.get(url, headers=headers)
         response.raise_for_status()
-        logging.info(response.json().get("data"))
-        return response.json().get("data", [])
+        return response
     except Exception as e:
         logging.error(f"Failed to fetch data from {url}: {e}")
         return []
