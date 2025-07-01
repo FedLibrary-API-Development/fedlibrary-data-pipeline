@@ -47,7 +47,8 @@ GO
 CREATE TABLE Unit (
     ereserve_id INT PRIMARY KEY NOT NULL,
     code NVARCHAR(100) NOT NULL,
-    name NVARCHAR(255) NOT NULL
+    name NVARCHAR(255) NOT NULL,
+    school_id INT NOT NULL
 );
 GO
 

@@ -75,14 +75,25 @@ def process_readings(token):
     insert_records(query, formatted, "Reading")
 
 def process_units(token):
-    url = f"{API_CONFIG['UNITS_URL']}?page[size]={PAGE_SIZE}"
-    units = fetch_all_pages(url, token)
-    formatted = [
-        (item.get("id"), item["attributes"].get("code"), item["attributes"].get("name"))
-        for item in units
-    ]
-    query = "INSERT INTO Unit (ereserve_id, code, name) VALUES (?, ?, ?)"
-    insert_records(query, formatted, "Unit")
+    school_url = f"{API_CONFIG['SCHOOLS_URL']}?page[size]={PAGE_SIZE}"
+    school_ids = [item.get("id") for item in fetch_all_pages(school_url, token)]
+    
+    all_units = []
+
+    # Note: The 'school_id' is not included in the unit data returned by the API.
+    # However, the API allows filtering units by 'school_id', so we fetch units for each school separately
+    # and manually associate the 'school_id' with each unit record during insertion.
+    for school_id in school_ids:
+        logging.info(f"Getting values for school ID: {school_id}")
+        url = f"{API_CONFIG['UNITS_URL']}?filter[school_id]={school_id}&page[size]={PAGE_SIZE}"
+        units = fetch_all_pages(url, token)
+        all_units.extend([
+            (item.get("id"), item["attributes"].get("code"), item["attributes"].get("name"), school_id)
+            for item in units
+        ])
+    if all_units:
+        query = "INSERT INTO Unit (ereserve_id, code, name, school_id) VALUES (?, ?, ?, ?)"
+        insert_records(query, all_units, "Unit")
 
 def process_unit_offerings(token):
     url = f"{API_CONFIG['UNIT_OFFERINGS_URL']}?page[size]={PAGE_SIZE}"
