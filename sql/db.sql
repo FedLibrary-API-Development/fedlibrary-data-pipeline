@@ -19,11 +19,11 @@ GO
 CREATE TABLE IntegrationUser (
     ereserve_id INT PRIMARY KEY NOT NULL,
     identifier NVARCHAR(255),
-    roles NVARCHAR(255) NOT NULL,
+    roles NVARCHAR(255),
     first_name NVARCHAR(255),
     last_name NVARCHAR(255),
     email NVARCHAR(100),
-    lti_consumer_user_id NVARCHAR(255) NOT NULL,
+    lti_consumer_user_id NVARCHAR(255),
     lti_lis_person_sourcedid NVARCHAR(255),
     created_at DATETIME,
     updated_at DATETIME
@@ -48,7 +48,8 @@ CREATE TABLE Unit (
     ereserve_id INT PRIMARY KEY NOT NULL,
     code NVARCHAR(100) NOT NULL,
     name NVARCHAR(255) NOT NULL,
-    school_id INT NOT NULL
+    school_id INT,
+    CONSTRAINT FK_Unit_School FOREIGN KEY (school_id) REFERENCES School (ereserve_id)
 );
 GO
 
@@ -112,8 +113,8 @@ GO
 
 CREATE TABLE ReadingListUsage (
     ereserve_id INT PRIMARY KEY NOT NULL,
-    list_id INT NOT NULL,
-    integration_user_id INT NOT NULL,
+    list_id INT,
+    integration_user_id INT,
     item_usage_count BIGINT DEFAULT 0,
     created_at DATETIME,
     updated_at DATETIME,
@@ -128,7 +129,7 @@ GO
 
 CREATE TABLE ReadingListItem (
     ereserve_id INT PRIMARY KEY NOT NULL,
-    list_id INT NOT NULL,
+    list_id INT,
     reading_id INT,
     status NVARCHAR(50),
     hidden BIT DEFAULT 0,
@@ -148,8 +149,8 @@ GO
 
 CREATE TABLE UnitOffering (
     ereserve_id INT PRIMARY KEY NOT NULL,
-    unit_id INT NOT NULL,
-    reading_list_id INT NOT NULL,
+    unit_id INT,
+    reading_list_id INT,
     source_unit_code NVARCHAR(100),
     source_unit_name NVARCHAR(255),
     source_unit_offering NVARCHAR(100),
@@ -167,9 +168,9 @@ GO
 
 CREATE TABLE ReadingListItemUsage (
     ereserve_id INT PRIMARY KEY NOT NULL,
-    item_id INT NOT NULL,
-    list_usage_id INT NOT NULL,
-    integration_user_id INT NOT NULL,
+    item_id INT,
+    list_usage_id INT,
+    integration_user_id INT,
     utilisation_count BIGINT DEFAULT 0,
     created_at DATETIME,
     updated_at DATETIME,
