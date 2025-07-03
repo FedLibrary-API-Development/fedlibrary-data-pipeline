@@ -4,10 +4,12 @@ from fedpipeline.db_handler import insert_records
 from fedpipeline.config import API_CONFIG
 from fedpipeline.config import PAGE_SIZE
 
-def fetch_all_pages(url, token):
+def fetch_all_pages(url):
     all_items = []
     while url:
-        response = fetch_data_from_api(url, token)
+        response = fetch_data_from_api(url)
+        if not response:
+            break
         data = response.json().get("data", [])
         links = response.json().get("links", {})
         logging.info(f"Fetched {len(data)} items from {url}")
@@ -17,9 +19,10 @@ def fetch_all_pages(url, token):
         url = links.get("next")
     return all_items
 
-def process_integration_users(token):
+
+def process_integration_users():
     url = f"{API_CONFIG['INTEGRATION_USERS_URL']}?page[size]={PAGE_SIZE}"
-    all_users = fetch_all_pages(url, token)
+    all_users = fetch_all_pages(url)
 
     formatted = [
         (
@@ -44,16 +47,16 @@ def process_integration_users(token):
     """
     insert_records(query, formatted, "IntegrationUser")
 
-def process_schools(token):
+def process_schools():
     url = f"{API_CONFIG['SCHOOLS_URL']}?page[size]={PAGE_SIZE}"
-    schools = fetch_all_pages(url, token)
+    schools = fetch_all_pages(url)
     formatted = [(item.get("id"), item["attributes"].get("name")) for item in schools]
     query = "INSERT INTO School (ereserve_id, name) VALUES (?, ?)"
     insert_records(query, formatted, "School")
 
-def process_readings(token):
+def process_readings():
     url = f"{API_CONFIG['READINGS_URL']}?page[size]={PAGE_SIZE}"
-    readings = fetch_all_pages(url, token)
+    readings = fetch_all_pages(url)
     formatted = [
         (
             item.get("id"),
@@ -74,10 +77,9 @@ def process_readings(token):
     """
     insert_records(query, formatted, "Reading")
 
-def process_units(token):
+def process_units():
     school_url = f"{API_CONFIG['SCHOOLS_URL']}?page[size]={PAGE_SIZE}"
-    school_ids = [item.get("id") for item in fetch_all_pages(school_url, token)]
-    
+    school_ids = [item.get("id") for item in fetch_all_pages(school_url)]
     all_units = []
 
     # Note: The 'school_id' is not included in the unit data returned by the API.
@@ -86,7 +88,7 @@ def process_units(token):
     for school_id in school_ids:
         logging.info(f"Getting values for school ID: {school_id}")
         url = f"{API_CONFIG['UNITS_URL']}?filter[school_id]={school_id}&page[size]={PAGE_SIZE}"
-        units = fetch_all_pages(url, token)
+        units = fetch_all_pages(url)
         all_units.extend([
             (item.get("id"), item["attributes"].get("code"), item["attributes"].get("name"), school_id)
             for item in units
@@ -95,9 +97,9 @@ def process_units(token):
         query = "INSERT INTO Unit (ereserve_id, code, name, school_id) VALUES (?, ?, ?, ?)"
         insert_records(query, all_units, "Unit")
 
-def process_unit_offerings(token):
+def process_unit_offerings():
     url = f"{API_CONFIG['UNIT_OFFERINGS_URL']}?page[size]={PAGE_SIZE}"
-    offerings = fetch_all_pages(url, token)
+    offerings = fetch_all_pages(url)
     formatted = [
         (
             item.get("id"),
@@ -120,9 +122,9 @@ def process_unit_offerings(token):
     """
     insert_records(query, formatted, "UnitOffering")
 
-def process_teaching_sessions(token):
+def process_teaching_sessions():
     url = f"{API_CONFIG['TEACHING_SESSIONS_URL']}?page[size]={PAGE_SIZE}"
-    sessions = fetch_all_pages(url, token)
+    sessions = fetch_all_pages(url)
     formatted = [
         (
             item.get("id"),
@@ -143,9 +145,9 @@ def process_teaching_sessions(token):
     """
     insert_records(query, formatted, "TeachingSession")
 
-def process_reading_lists(token):
+def process_reading_lists():
     url = f"{API_CONFIG['READING_LISTS_URL']}?page[size]={PAGE_SIZE}"
-    lists = fetch_all_pages(url, token)
+    lists = fetch_all_pages(url)
     formatted = [
         (
             item.get("id"),
@@ -174,9 +176,9 @@ def process_reading_lists(token):
     """
     insert_records(query, formatted, "ReadingList")
 
-def process_reading_list_items(token):
+def process_reading_list_items():
     url = f"{API_CONFIG['READING_LIST_ITEMS_URL']}?page[size]={PAGE_SIZE}"
-    items = fetch_all_pages(url, token)
+    items = fetch_all_pages(url)
     formatted = [
         (
             item.get("id"),
@@ -201,9 +203,9 @@ def process_reading_list_items(token):
     """
     insert_records(query, formatted, "ReadingListItem")
 
-def process_reading_list_usage(token):
+def process_reading_list_usage():
     url = f"{API_CONFIG['READING_LIST_USAGE_URL']}?page[size]={PAGE_SIZE}"
-    usages = fetch_all_pages(url, token)
+    usages = fetch_all_pages(url)
     formatted = [
         (
             item.get("id"),
@@ -223,9 +225,9 @@ def process_reading_list_usage(token):
     """
     insert_records(query, formatted, "ReadingListUsage")
 
-def process_reading_list_item_usage(token):
+def process_reading_list_item_usage():
     url = f"{API_CONFIG['READING_LIST_ITEM_USAGE_URL']}?page[size]={PAGE_SIZE}"
-    usages = fetch_all_pages(url, token)
+    usages = fetch_all_pages(url)
     formatted = [
         (
             item.get("id"),
@@ -247,9 +249,9 @@ def process_reading_list_item_usage(token):
     """
     insert_records(query, formatted, "ReadingListItemUsage")
 
-def process_reading_utilisation(token):
+def process_reading_utilisation():
     url = f"{API_CONFIG['READING_UTILISATION_URL']}?page[size]={PAGE_SIZE}"
-    utilisations = fetch_all_pages(url, token)
+    utilisations = fetch_all_pages(url)
     formatted = [
         (
             item.get("id"),
