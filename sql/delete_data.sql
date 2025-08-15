@@ -10,6 +10,7 @@ DELETE FROM dbo.UnitOffering;
 DELETE FROM dbo.ReadingListItem;
 DELETE FROM dbo.ReadingList;
 DELETE FROM dbo.Unit;
+DELETE FROM dbo.FedUnit;
 DELETE FROM dbo.Reading;
 DELETE FROM dbo.TeachingSession;
 DELETE FROM dbo.School;

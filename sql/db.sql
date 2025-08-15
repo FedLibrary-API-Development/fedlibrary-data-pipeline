@@ -196,3 +196,17 @@ CREATE TABLE ReadingUtilisation (
     CONSTRAINT FK_ReadingUtilisation_IntegrationUser FOREIGN KEY (integration_user_id) REFERENCES IntegrationUser (ereserve_id)
 );
 GO
+
+-- ----------------------------------------
+-- Table: FedUnit
+-- ----------------------------------------
+
+CREATE TABLE FedUnit(
+    uc_id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+    unit_id INT,
+    unit_code VARCHAR(50),
+    is_false BIT DEFAULT 0,
+    num_extracted INT,
+    FOREIGN KEY (unit_id) REFERENCES Unit (ereserve_id)
+);
+GO
