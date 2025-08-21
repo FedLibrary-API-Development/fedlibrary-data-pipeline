@@ -14,6 +14,14 @@ API_CONFIG = {
     "READING_UTILISATION_URL": "https://learningresources-staging.federation.edu.au/public/v1/reading-utilisations",
 }
 
+# UNIT Codes Prefixes
+KNOWN_PREFIXES = {
+    'AIWSU', 'BUACC', 'BUECO', 'BUHRM', 'BULAW', 'BUMGT', 'BUMKT', 'COOPB', 'COOPE', 'COOPI',
+    'COOPC', 'COOPS', 'DATSC', 'ENGIN', 'ENGPG', 'ENGRG', 'ITECH', 'ITWSU', 'MATHS', 'MREGC',
+    'SCBCH', 'SCBIO', 'SCBRW', 'SCCHM', 'SCCOR', 'SCENV', 'SCGEO', 'SCHON', 'SCMED', 'SCMIC',
+    'SCMOL', 'SCSUS', 'SCVET', 'STATS', 'VIEPS'
+}
+
 # API Credentials
 CREDENTIALS = {
     "email": "youremail",
@@ -23,10 +31,10 @@ CREDENTIALS = {
 # DB Configuration
 DB_CONFIG = {
     "DRIVER": "ODBC Driver 17 for SQL Server",
-    "SERVER": "localhost\\SQLEXPRESS",
+    "SERVER": "localhost",
     "DATABASE": "eReserveData",
     "UID": "sa",
-    "PWD": "tharu"
+    "PWD": "yourPassword"
 }
 
 # Page size to fetch data in batches

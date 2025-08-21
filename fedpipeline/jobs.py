@@ -1,8 +1,10 @@
 import logging
+import re
 from fedpipeline.api_handler import fetch_data_from_api
 from fedpipeline.db_handler import insert_records
 from fedpipeline.config import API_CONFIG
 from fedpipeline.config import PAGE_SIZE
+from fedpipeline.config import KNOWN_PREFIXES
 
 def fetch_all_pages(url):
     all_items = []
@@ -96,6 +98,37 @@ def process_units():
     if all_units:
         query = "INSERT INTO Unit (ereserve_id, code, name, school_id) VALUES (?, ?, ?, ?)"
         insert_records(query, all_units, "Unit")
+
+    process_fedunits(all_units)
+
+def process_fedunits(all_units):
+    fedunit_data = []
+    for ereserve_id, code_str, name, school_id in all_units:
+        extracted_codes = uc_extraction(code_str, use_whitelist=False)
+        num_extracted = len(extracted_codes)
+        for unit_code in extracted_codes:
+            prefix = unit_code[:5]
+            is_false = 0 if prefix in KNOWN_PREFIXES else 1
+            fedunit_data.append((ereserve_id, unit_code, is_false, num_extracted))
+
+    if fedunit_data:
+        fed_query = """
+            INSERT INTO FedUnit (unit_id, unit_code, is_false, num_extracted)
+            VALUES (?, ?, ?, ?)
+        """
+        insert_records(fed_query, fedunit_data, "FedUnit")
+
+def uc_extraction(input_str: str, use_whitelist: bool = False) -> list[str]:
+    #importing Python's regex module above
+    pattern = r'([A-Z]{5})\s*(\d{4})'
+    matches = re.findall(pattern, input_str)
+    codes = [prefix + digits for prefix, digits in matches]
+    codes = list(set(codes))
+
+    if use_whitelist:
+        codes = [code for code in codes if code[:5] in KNOWN_PREFIXES]
+
+    return codes
 
 def process_unit_offerings():
     url = f"{API_CONFIG['UNIT_OFFERINGS_URL']}?page[size]={PAGE_SIZE}"
