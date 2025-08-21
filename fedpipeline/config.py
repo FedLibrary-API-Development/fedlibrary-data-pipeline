@@ -24,8 +24,8 @@ KNOWN_PREFIXES = {
 
 # API Credentials
 CREDENTIALS = {
-    "email": "youremail",
-    "password": "yourPassword"
+    "email": "ta3@students.federation.edu.au",
+    "password": "IamTG@8282828282"
 }
 
 # DB Configuration
@@ -34,7 +34,7 @@ DB_CONFIG = {
     "SERVER": "localhost",
     "DATABASE": "eReserveData",
     "UID": "sa",
-    "PWD": "yourPassword"
+    "PWD": "YourPassword"
 }
 
 # Page size to fetch data in batches

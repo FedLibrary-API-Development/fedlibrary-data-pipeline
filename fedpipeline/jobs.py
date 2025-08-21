@@ -158,6 +158,10 @@ def process_unit_offerings():
 def process_teaching_sessions():
     url = f"{API_CONFIG['TEACHING_SESSIONS_URL']}?page[size]={PAGE_SIZE}"
     sessions = fetch_all_pages(url)
+
+    # precompile regex once
+    four_digits = re.compile(r'^(\d{4})')
+
     formatted = [
         (
             item.get("id"),
@@ -166,15 +170,17 @@ def process_teaching_sessions():
             item["attributes"].get("end-date"),
             item["attributes"].get("archived"),
             item["attributes"].get("created-at"),
-            item["attributes"].get("updated-at")
+            item["attributes"].get("updated-at"),
+            # extract 4 leading digits (or None if not present)
+            (m.group(1) if (m := four_digits.match(item["attributes"].get("name") or "")) else None),
         )
         for item in sessions
     ]
     query = """
         INSERT INTO TeachingSession (
             ereserve_id, name, start_date, end_date,
-            archived, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            archived, created_at, updated_at, code
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """
     insert_records(query, formatted, "TeachingSession")
 

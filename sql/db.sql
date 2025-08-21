@@ -64,7 +64,8 @@ CREATE TABLE TeachingSession (
     end_date DATE,
     archived BIT DEFAULT 0,
     created_at DATETIME,
-    updated_at DATETIME
+    updated_at DATETIME,
+    code VARCHAR(10)
 );
 GO
 
