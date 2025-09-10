@@ -218,24 +218,28 @@ def process_reading_lists():
 def process_reading_list_items():
     url = f"{API_CONFIG['READING_LIST_ITEMS_URL']}?page[size]={PAGE_SIZE}"
     items = fetch_all_pages(url)
-    formatted = [
-        (
+
+    formatted = []
+    for item in items:
+        status = item["attributes"].get("status")
+        deleted = 0 if status and status.lower() == "available" else 1
+
+        formatted.append((
             item.get("id"),
             item["attributes"].get("list-id"),
             item["attributes"].get("reading-id"),
-            item["attributes"].get("status"),
+            deleted,  
             item["attributes"].get("hidden"),
             item["attributes"].get("reading-utilisations-count"),
             item["attributes"].get("reading-importance"),
             item["attributes"].get("usage-count"),
             item["attributes"].get("created-at"),
             item["attributes"].get("updated-at")
-        )
-        for item in items
-    ]
+        ))
+
     query = """
         INSERT INTO ReadingListItem (
-            ereserve_id, list_id, reading_id, status, hidden,
+            ereserve_id, list_id, reading_id, deleted, hidden,
             reading_utilisations_count, reading_importance,
             usage_count, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

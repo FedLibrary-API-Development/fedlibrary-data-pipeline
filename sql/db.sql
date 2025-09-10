@@ -132,7 +132,7 @@ CREATE TABLE ReadingListItem (
     ereserve_id INT PRIMARY KEY NOT NULL,
     list_id INT,
     reading_id INT,
-    status NVARCHAR(50),
+    deleted BIT DEFAULT 0,
     hidden BIT DEFAULT 0,
     reading_utilisations_count BIGINT DEFAULT 0,
     reading_importance NVARCHAR(100),
