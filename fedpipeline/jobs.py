@@ -96,16 +96,19 @@ def process_units():
             for item in units
         ])
     if all_units:
-        query = "INSERT INTO Unit (ereserve_id, code, name, school_id) VALUES (?, ?, ?, ?)"
+        query = "INSERT INTO Unit (ereserve_id, code, name, school_id, fedcode) VALUES (?, ?, ?, ?, NULL)"
         insert_records(query, all_units, "Unit")
 
     process_fedunits(all_units)
 
 def process_fedunits(all_units):
     fedunit_data = []
+    fedcode_updates = []
     for ereserve_id, code_str, name, school_id in all_units:
         extracted_codes = uc_extraction(code_str, use_whitelist=False)
         num_extracted = len(extracted_codes)
+        fedcode_str = ' / '.join(extracted_codes) if extracted_codes else None
+        fedcode_updates.append((fedcode_str, ereserve_id))
         for unit_code in extracted_codes:
             prefix = unit_code[:5]
             is_false = 0 if prefix in KNOWN_PREFIXES else 1
@@ -118,8 +121,11 @@ def process_fedunits(all_units):
         """
         insert_records(fed_query, fedunit_data, "FedUnit")
 
+    if fedcode_updates:
+        fedcode_query = "UPDATE Unit SET fedcode = ? WHERE ereserve_id = ?"
+        insert_records(fedcode_query, fedcode_updates, "Unit")
+
 def uc_extraction(input_str: str, use_whitelist: bool = False) -> list[str]:
-    #importing Python's regex module above
     pattern = r'([A-Z]{5})\s*(\d{4})'
     matches = re.findall(pattern, input_str)
     codes = [prefix + digits for prefix, digits in matches]

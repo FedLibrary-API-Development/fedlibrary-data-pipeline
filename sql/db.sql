@@ -49,6 +49,7 @@ CREATE TABLE Unit (
     code NVARCHAR(100) NOT NULL,
     name NVARCHAR(255) NOT NULL,
     school_id INT,
+    fedcode NVARCHAR(500),
     CONSTRAINT FK_Unit_School FOREIGN KEY (school_id) REFERENCES School (ereserve_id)
 );
 GO
