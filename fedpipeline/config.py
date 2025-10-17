@@ -39,3 +39,12 @@ DB_CONFIG = {
 
 # Page size to fetch data in batches
 PAGE_SIZE = 1000
+
+# Date filter configuration
+DATE_FILTER_CONFIG = {
+    "USE_YEARS_BACK": True,         # Set to True to use YEARS_BACK, False to use fixed dates
+    "YEARS_BACK": 0.5,              # How many years back from today (0.5 = 6 months, 1.0 = 1 year)
+    "START_DATE": "2023-01-01",     # Format: YYYY-MM-DD 
+    "END_DATE": "2023-01-31",
+    "APPLY_TO_USAGE_TABLES": True   # Set to False to disable date filtering on usage tables
+}
