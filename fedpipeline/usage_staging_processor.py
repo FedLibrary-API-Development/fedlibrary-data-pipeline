@@ -22,6 +22,7 @@ class UsageStagingProcessor:
             'end_time': None,
             'records_processed': 0,
             'records_inserted': 0,
+            'records_updated': 0,
             'records_skipped': 0,
             'duplicates_skipped': 0,
             'orphaned_records': 0,
@@ -299,21 +300,31 @@ class UsageStagingProcessor:
         transfer_queries = [
             {
                 'name': 'ReadingListUsage',
-                'insert_query': f"""
-                INSERT INTO ReadingListUsage (ereserve_id, list_id, integration_user_id, 
-                                            item_usage_count, created_at, updated_at)
-                SELECT s.ereserve_id, s.list_id, s.integration_user_id, 
-                       s.item_usage_count, s.created_at, s.updated_at
-                FROM #STAGE_ReadingListUsage_{self.batch_id} s
-                WHERE NOT EXISTS (
-                    SELECT 1 FROM ReadingListUsage r 
-                    WHERE r.ereserve_id = s.ereserve_id
-                )
-                -- Insert only if parent records exist in DB
-                AND EXISTS (SELECT 1 FROM ReadingList WHERE ereserve_id = s.list_id)
-                AND EXISTS (SELECT 1 FROM IntegrationUser WHERE ereserve_id = s.integration_user_id)
+                'merge_query': f"""
+                MERGE ReadingListUsage AS target
+                USING (
+                    SELECT s.ereserve_id, s.list_id, s.integration_user_id, 
+                           s.item_usage_count, s.created_at, s.updated_at
+                    FROM #STAGE_ReadingListUsage_{self.batch_id} s
+                    -- Only merge if parent records exist in DB
+                    WHERE EXISTS (SELECT 1 FROM ReadingList WHERE ereserve_id = s.list_id)
+                      AND EXISTS (SELECT 1 FROM IntegrationUser WHERE ereserve_id = s.integration_user_id)
+                ) AS source
+                ON target.ereserve_id = source.ereserve_id
+                WHEN MATCHED THEN
+                    UPDATE SET 
+                        list_id = source.list_id,
+                        integration_user_id = source.integration_user_id,
+                        item_usage_count = source.item_usage_count,
+                        created_at = source.created_at,
+                        updated_at = source.updated_at
+                WHEN NOT MATCHED BY TARGET THEN
+                    INSERT (ereserve_id, list_id, integration_user_id, 
+                            item_usage_count, created_at, updated_at)
+                    VALUES (source.ereserve_id, source.list_id, source.integration_user_id,
+                            source.item_usage_count, source.created_at, source.updated_at);
                 """,
-                'duplicates_query': f"""
+                'count_existing_query': f"""
                 SELECT COUNT(*)
                 FROM #STAGE_ReadingListUsage_{self.batch_id} s
                 WHERE EXISTS (
@@ -324,21 +335,32 @@ class UsageStagingProcessor:
             },
             {
                 'name': 'ReadingListItemUsage',
-                'insert_query': f"""
-                INSERT INTO ReadingListItemUsage (ereserve_id, item_id, list_usage_id, 
-                                                integration_user_id, utilisation_count, created_at, updated_at)
-                SELECT s.ereserve_id, s.item_id, s.list_usage_id, 
-                       s.integration_user_id, s.utilisation_count, s.created_at, s.updated_at
-                FROM #STAGE_ReadingListItemUsage_{self.batch_id} s
-                WHERE NOT EXISTS (
-                    SELECT 1 FROM ReadingListItemUsage r 
-                    WHERE r.ereserve_id = s.ereserve_id
-                )
-                AND EXISTS (SELECT 1 FROM ReadingListItem WHERE ereserve_id = s.item_id)
-                AND EXISTS (SELECT 1 FROM ReadingListUsage WHERE ereserve_id = s.list_usage_id)
-                AND EXISTS (SELECT 1 FROM IntegrationUser WHERE ereserve_id = s.integration_user_id)
+                'merge_query': f"""
+                MERGE ReadingListItemUsage AS target
+                USING (
+                    SELECT s.ereserve_id, s.item_id, s.list_usage_id, 
+                           s.integration_user_id, s.utilisation_count, s.created_at, s.updated_at
+                    FROM #STAGE_ReadingListItemUsage_{self.batch_id} s
+                    WHERE EXISTS (SELECT 1 FROM ReadingListItem WHERE ereserve_id = s.item_id)
+                      AND EXISTS (SELECT 1 FROM ReadingListUsage WHERE ereserve_id = s.list_usage_id)
+                      AND EXISTS (SELECT 1 FROM IntegrationUser WHERE ereserve_id = s.integration_user_id)
+                ) AS source
+                ON target.ereserve_id = source.ereserve_id
+                WHEN MATCHED THEN
+                    UPDATE SET 
+                        item_id = source.item_id,
+                        list_usage_id = source.list_usage_id,
+                        integration_user_id = source.integration_user_id,
+                        utilisation_count = source.utilisation_count,
+                        created_at = source.created_at,
+                        updated_at = source.updated_at
+                WHEN NOT MATCHED BY TARGET THEN
+                    INSERT (ereserve_id, item_id, list_usage_id, 
+                            integration_user_id, utilisation_count, created_at, updated_at)
+                    VALUES (source.ereserve_id, source.item_id, source.list_usage_id,
+                            source.integration_user_id, source.utilisation_count, source.created_at, source.updated_at);
                 """,
-                'duplicates_query': f"""
+                'count_existing_query': f"""
                 SELECT COUNT(*)
                 FROM #STAGE_ReadingListItemUsage_{self.batch_id} s
                 WHERE EXISTS (
@@ -349,22 +371,32 @@ class UsageStagingProcessor:
             },
             {
                 'name': 'ReadingUtilisation',
-                'insert_query': f"""
-                INSERT INTO ReadingUtilisation (ereserve_id, integration_user_id, item_id, 
-                                              item_usage_id, created_at, updated_at)
-                SELECT s.ereserve_id, s.integration_user_id, s.item_id, 
-                       s.item_usage_id, s.created_at, s.updated_at
-                FROM #STAGE_ReadingUtilisation_{self.batch_id} s
-                WHERE NOT EXISTS (
-                    SELECT 1 FROM ReadingUtilisation r 
-                    WHERE r.ereserve_id = s.ereserve_id
-                )
-                AND EXISTS (SELECT 1 FROM ReadingListItem WHERE ereserve_id = s.item_id)
-                AND EXISTS (SELECT 1 FROM ReadingListItemUsage WHERE ereserve_id = s.item_usage_id)
-                AND (s.integration_user_id IS NULL 
-                     OR EXISTS (SELECT 1 FROM IntegrationUser WHERE ereserve_id = s.integration_user_id))
+                'merge_query': f"""
+                MERGE ReadingUtilisation AS target
+                USING (
+                    SELECT s.ereserve_id, s.integration_user_id, s.item_id, 
+                           s.item_usage_id, s.created_at, s.updated_at
+                    FROM #STAGE_ReadingUtilisation_{self.batch_id} s
+                    WHERE EXISTS (SELECT 1 FROM ReadingListItem WHERE ereserve_id = s.item_id)
+                      AND EXISTS (SELECT 1 FROM ReadingListItemUsage WHERE ereserve_id = s.item_usage_id)
+                      AND (s.integration_user_id IS NULL 
+                           OR EXISTS (SELECT 1 FROM IntegrationUser WHERE ereserve_id = s.integration_user_id))
+                ) AS source
+                ON target.ereserve_id = source.ereserve_id
+                WHEN MATCHED THEN
+                    UPDATE SET 
+                        integration_user_id = source.integration_user_id,
+                        item_id = source.item_id,
+                        item_usage_id = source.item_usage_id,
+                        created_at = source.created_at,
+                        updated_at = source.updated_at
+                WHEN NOT MATCHED BY TARGET THEN
+                    INSERT (ereserve_id, integration_user_id, item_id, 
+                            item_usage_id, created_at, updated_at)
+                    VALUES (source.ereserve_id, source.integration_user_id, source.item_id,
+                            source.item_usage_id, source.created_at, source.updated_at);
                 """,
-                'duplicates_query': f"""
+                'count_existing_query': f"""
                 SELECT COUNT(*)
                 FROM #STAGE_ReadingUtilisation_{self.batch_id} s
                 WHERE EXISTS (
@@ -380,44 +412,50 @@ class UsageStagingProcessor:
             
             for transfer_info in transfer_queries:
                 table_name = transfer_info['name']
-                insert_query = transfer_info['insert_query']
-                duplicates_query = transfer_info['duplicates_query']
+                merge_query = transfer_info['merge_query']
+                count_existing_query = transfer_info['count_existing_query']
                 start_time = time.time()
                 
                 # Count records in staging
                 cursor.execute(f"SELECT COUNT(*) FROM #STAGE_{table_name}_{self.batch_id}")
                 staging_count = cursor.fetchone()[0]
-                # Count duplicates (already exist)
-                cursor.execute(duplicates_query)
-                duplicates_count = cursor.fetchone()[0]
                 
-                # Transfer with FK validation
-                cursor.execute(insert_query)
-                rows_inserted = cursor.rowcount
-                rows_skipped = staging_count - rows_inserted
-                orphaned_count = rows_skipped - duplicates_count
+                # Count existing records (will be updated)
+                cursor.execute(count_existing_query)
+                existing_count = cursor.fetchone()[0]
+                
+                cursor.execute(merge_query)
+                rows_affected = cursor.rowcount
+                rows_inserted = max(0, rows_affected - existing_count)
+                rows_updated = min(rows_affected, existing_count)
+                rows_skipped = staging_count - rows_affected  # Records with missing parent FKs
+                
                 execution_time = int((time.time() - start_time) * 1000)
                 
                 self.metrics['records_inserted'] += rows_inserted
                 self.metrics['records_skipped'] += rows_skipped
-                self.metrics['duplicates_skipped'] += duplicates_count
-                self.metrics['orphaned_records'] += orphaned_count
-                logging.info(f"Transferred {rows_inserted}/{staging_count} records to {table_name} in {execution_time}ms")
+                self.metrics['orphaned_records'] += rows_skipped
+
+                if 'records_updated' not in self.metrics:
+                    self.metrics['records_updated'] = 0
+                self.metrics['records_updated'] += rows_updated
+                logging.info(f"Merged {rows_affected}/{staging_count} records to {table_name} in {execution_time}ms")
                 
+                if rows_inserted > 0:
+                    logging.info(f"  - {rows_inserted} new records inserted")
+                if rows_updated > 0:
+                    logging.info(f"  - {rows_updated} existing records updated")
                 if rows_skipped > 0:
-                    if duplicates_count > 0:
-                        logging.info(f"  - {duplicates_count} duplicates (already exist in table)")
-                    if orphaned_count > 0:
-                        logging.warning(f"  - {orphaned_count} orphaned (missing parent records)")
+                    logging.warning(f"  - {rows_skipped} records skipped (missing parent records)")
                 
                 cursor.execute(f"""
                     INSERT INTO #ProcessingLog_{self.batch_id} 
                     (batch_id, table_name, operation, record_count, execution_time_ms)
                     VALUES (?, ?, ?, ?, ?)
-                """, (self.batch_id, table_name, 'FINALIZE_TRANSFER', rows_inserted, execution_time))
+                """, (self.batch_id, table_name, 'UPSERT_MERGE', rows_affected, execution_time))
             
             conn.commit()
-            logging.info(f"Staging transfer complete: {self.metrics['records_inserted']} inserted, {self.metrics['records_skipped']} skipped")
+            logging.info(f"Staging transfer complete: {self.metrics['records_inserted']} inserted, {self.metrics.get('records_updated', 0)} updated, {self.metrics['records_skipped']} skipped")
             return True
                 
         except Exception as e:
@@ -508,6 +546,7 @@ class UsageStagingProcessor:
             logging.info(f"  - Date range: {self.metrics['date_range']['start']} to {self.metrics['date_range']['end']}")
             logging.info(f"  - Records processed: {self.metrics['records_processed']}")
             logging.info(f"  - Records inserted: {self.metrics['records_inserted']}")
+            logging.info(f"  - Records updated: {self.metrics['records_updated']}")
             logging.info(f"  - Records skipped: {self.metrics['records_skipped']}")
             if self.metrics['duplicates_skipped'] > 0:
                 logging.info(f"  - Duplicates (already exist): {self.metrics['duplicates_skipped']}")
