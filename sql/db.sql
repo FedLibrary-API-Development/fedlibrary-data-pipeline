@@ -212,3 +212,19 @@ CREATE TABLE FedUnit(
     FOREIGN KEY (unit_id) REFERENCES Unit (ereserve_id)
 );
 GO
+
+-- ----------------------------------------
+-- Table: PipelineRunHistory
+-- ----------------------------------------
+
+CREATE TABLE PipelineRunHistory(
+    run_id INT IDENTITY(1,1) PRIMARY KEY,
+    run_start_time DATETIME NOT NULL,
+    run_end_time DATETIME NULL,
+    status VARCHAR(20) NOT NULL CHECK (status IN ('IN_PROGRESS', 'SUCCESS', 'FAILED')),
+    is_initial_load BIT NOT NULL DEFAULT 0,
+    created_at DATETIME DEFAULT GETDATE(),
+    INDEX IX_PipelineRunHistory_Status (status),
+    INDEX IX_PipelineRunHistory_StartTime (run_start_time DESC)
+);
+GO
