@@ -7,4 +7,5 @@ __pycache__/
 .idea/
 .venv
 venv
-venv/
+venv/run_pipeline_agent.cmd
+run_pipeline_manual.bat
